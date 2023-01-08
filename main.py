@@ -75,13 +75,20 @@ segment_reader.SetFileName(segmentation)
 segment_reader.Update()
 
 
-# segments
+# creating actors for particular segments
+
 lut = create_ear_lut(colors)
 
-a = create_ear_actor(segmentation, 23)
-a.GetProperty().SetDiffuseColor(lut.GetTableValue(1)[:3])
-b = create_ear_actor(segmentation, 19)
-b.GetProperty().SetDiffuseColor(lut.GetTableValue(2)[:3])
+# List of segment indexes form EarAtlasColors.ctbl
+indexes = (4, 5, 9, 10, 12, 14, 17, 19, 21, 23, 24, 25, 28, 140) 
+actor_list = []
+i = 2
+
+for index in indexes:
+    a = create_ear_actor(segmentation, index)
+    a.GetProperty().SetDiffuseColor(lut.GetTableValue(i)[:3]) # :3
+    actor_list.append(a)
+    i = i + 1
 
 # outlines
 outlineData = vtk.vtkOutlineFilter()
@@ -140,8 +147,11 @@ coronal.ForceOpaqueOn()
 ren1 = vtk.vtkRenderer()
 ren1.SetBackground(0.1, 0.2, 0.4)
 ren1.AddActor(outline)
-ren1.AddActor(a) 
-ren1.AddActor(b)
+
+# adding segmentation results
+for actor in actor_list:
+    ren1.AddActor(actor)
+    
 ren1.AddActor(sagittal)
 ren1.AddActor(axial)
 ren1.AddActor(coronal)
