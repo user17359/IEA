@@ -1,10 +1,7 @@
 import vtk
 
-def create_ear_actor(file_name, tissue):
-    reader = vtk.vtkNrrdReader()
-    reader.SetFileName(str(file_name))
-    reader.Update()
-
+def create_ear_actor(reader, tissue):
+    
     select_tissue = vtk.vtkImageThreshold()
     select_tissue.ThresholdBetween(tissue, tissue)
     select_tissue.SetInValue(255)
@@ -85,7 +82,7 @@ actor_list = []
 i = 2
 
 for index in indexes:
-    a = create_ear_actor(segmentation, index)
+    a = create_ear_actor(segment_reader, index)
     a.GetProperty().SetDiffuseColor(lut.GetTableValue(i)[:3]) # :3
     actor_list.append(a)
     i = i + 1
