@@ -78,13 +78,88 @@ def create_ear_lut(colors):
 
     return lut
 
+def make_slider_widget(properties, colors, lut, idx):
+    slider = vtk.vtkSliderRepresentation2D()
+
+    slider.SetMinimumValue(properties.value_minimum)
+    slider.SetMaximumValue(properties.value_maximum)
+    slider.SetValue(properties.value_initial)
+    slider.SetTitleText(properties.title)
+
+    slider.GetPoint1Coordinate().SetCoordinateSystemToNormalizedDisplay()
+    slider.GetPoint1Coordinate().SetValue(properties.p1[0], properties.p1[1])
+    slider.GetPoint2Coordinate().SetCoordinateSystemToNormalizedDisplay()
+    slider.GetPoint2Coordinate().SetValue(properties.p2[0], properties.p2[1])
+
+    slider.SetTubeWidth(properties.tube_width)
+    slider.SetSliderLength(properties.slider_length)
+    slider.SetTitleHeight(properties.title_height)
+    slider.SetLabelHeight(properties.label_height)
+
+    # Set the color properties
+    # Change the color of the bar.
+    slider.GetTubeProperty().SetColor(colors.GetColor3d(properties.bar_color))
+    # Change the color of the ends of the bar.
+    slider.GetCapProperty().SetColor(colors.GetColor3d(properties.bar_ends_color))
+    # Change the color of the knob that slides.
+    slider.GetSliderProperty().SetColor(colors.GetColor3d(properties.slider_color))
+    # Change the color of the knob when the mouse is held on it.
+    slider.GetSelectedProperty().SetColor(colors.GetColor3d(properties.selected_color))
+    # Change the color of the text displaying the value.
+    slider.GetLabelProperty().SetColor(colors.GetColor3d(properties.value_color))
+    # Change the color of the text indicating what the slider controls
+    if idx in range(0, 16):
+        slider.GetTitleProperty().SetColor(lut.GetTableValue(idx)[:3])
+        slider.GetTitleProperty().ShadowOff()
+    else:
+        slider.GetTitleProperty().SetColor(colors.GetColor3d(properties.title_color))
+
+    slider_widget = vtk.vtkSliderWidget()
+    slider_widget.SetRepresentation(slider)
+
+    return slider_widget
+
+class SliderProperties:
+    tube_width = 0.008
+    slider_length = 0.008
+    title_height = 0.02
+    label_height = 0.01
+
+    value_minimum = 0.0
+    value_maximum = 1.0
+    value_initial = 1.0
+
+    p1 = [0.1, 0.1]
+    p2 = [0.3, 0.1]
+
+    title = None
+
+    title_color = 'MistyRose'
+    value_color = 'Gray'
+    slider_color = 'Gray'
+    selected_color = 'Gray'
+    bar_color = 'Black'
+    bar_ends_color = 'Black'
+
+class SliderCB:
+    def __init__(self, actor_property):
+        self.actorProperty = actor_property
+
+    def __call__(self, caller, ev):
+        slider_widget = caller
+        value = slider_widget.GetRepresentation().GetValue()
+        self.actorProperty.SetOpacity(value)
+
 colors = vtk.vtkNamedColors()
 rawData = 'rawData\Ear-CT.nrrd' # raw data location
 segmentation = 'segmantation\Ear-seg.nrrd' # segmentation data location
 
+# elements that will be used with indexes form EarAtlasColors.ctbl
+elements = {"Tympanic membrane" : 4, "Facial nerve" : 5, "Cochlear nerve" : 9, "Labirynth" : 10, "Fenestra rotunda" : 12,
+            "Incus bone" : 14, "Stapes bone" : 17, "Tensor tympani muscle" : 19, "Internal jugular vein" : 21, "Osseous spiral lamina" : 23,
+            "Internal carotid artery" : 24, "Vestibular nerve" : 25, "Stapedius muscle" : 28, "Malleus bone" : 140}
+
 # colors
-colors.SetColor('AColor', [255, 0, 0, 255])
-colors.SetColor('BColor', [0, 255, 0, 255])
 colors.SetColor('BkgColor', [51, 77, 102, 255])
 
 # reading raw data nrrd file
@@ -96,21 +171,61 @@ segment_reader = vtk.vtkNrrdReader()
 segment_reader.SetFileName(segmentation)
 segment_reader.Update()
 
+# for sliders that will be rendered in menu
+sliders = dict()
+step_size = 1.0 / 15
+pos_y = 0.075
 
 # creating actors for particular segments
-
 lut = create_ear_lut(colors)
 
 # List of segment indexes form EarAtlasColors.ctbl
-indexes = (4, 5, 9, 10, 12, 14, 17, 19, 21, 23, 24, 25, 28, 140) 
 actor_list = []
 i = 2
 
-for index in indexes:
-    a = create_smooth_ear_actor(segment_reader, index)
+# Create renderers
+ren1 = vtk.vtkRenderer()
+ren1.SetBackground(0.1, 0.2, 0.4)
+
+# slider renderer
+ren2 = vtk.vtkRenderer()
+ren2.SetBackground(colors.GetColor3d('Lavender'))
+
+ren1.SetViewport(0.0, 0.0, 0.7, 1.0)
+ren2.SetViewport(0.7, 0.0, 1, 1)
+
+renWin = vtk.vtkRenderWindow()
+renWin.AddRenderer(ren1)
+renWin.AddRenderer(ren2)
+renWin.SetSize(1200, 900)
+renWin.SetWindowName('IEA')
+
+render_window_interactor = vtk.vtkRenderWindowInteractor()
+render_window_interactor.SetRenderWindow(renWin)
+
+for element, element_index in elements.items():
+    a = create_smooth_ear_actor(segment_reader, element_index)
     a.GetProperty().SetDiffuseColor(lut.GetTableValue(i)[:3]) # :3
     actor_list.append(a)
     i = i + 1
+    
+    # creating slider
+    slider_properties = SliderProperties()
+    slider_properties.value_initial = 1
+    slider_properties.title = element
+    # Screen coordinates
+    slider_properties.p1 = [0.05, pos_y]
+    slider_properties.p2 = [0.25, pos_y]
+    pos_y += step_size
+    cb = SliderCB(a.GetProperty())
+
+    slider_widget = make_slider_widget(slider_properties, colors, lut, i)
+    slider_widget.SetCurrentRenderer(ren2)
+    slider_widget.SetInteractor(render_window_interactor)
+    slider_widget.SetAnimationModeToAnimate()
+    slider_widget.EnabledOn()
+    slider_widget.AddObserver(vtk.vtkCommand.InteractionEvent, cb)
+    sliders[element] = slider_widget
 
 # outlines
 outlineData = vtk.vtkOutlineFilter()
@@ -165,9 +280,7 @@ coronal.GetMapper().SetInputConnection(coronal_colors.GetOutputPort())
 coronal.SetDisplayExtent(0, 510, 255, 255, 0, 510)
 coronal.ForceOpaqueOn()
 
-# renderer
-ren1 = vtk.vtkRenderer()
-ren1.SetBackground(0.1, 0.2, 0.4)
+# renderer actors
 ren1.AddActor(outline)
 
 # adding segmentation results
@@ -177,11 +290,6 @@ for actor in actor_list:
 ren1.AddActor(sagittal)
 ren1.AddActor(axial)
 ren1.AddActor(coronal)
-
-
-renWin = vtk.vtkRenderWindow()
-renWin.AddRenderer(ren1)
-renWin.SetSize(900, 600)
 
 iren = vtk.vtkRenderWindowInteractor()
 iren.SetRenderWindow(renWin)
