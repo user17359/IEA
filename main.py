@@ -200,6 +200,8 @@ ren2.SetViewport(0.7, 0.0, 1, 1)
 renWin = vtk.vtkRenderWindow()
 renWin.AddRenderer(ren1)
 renWin.AddRenderer(ren2)
+
+# setting window properties
 renWin.SetSize(1200, 900)
 renWin.SetWindowName('IEA')
 
@@ -270,7 +272,7 @@ axial_colors.Update()
 
 axial = vtk.vtkImageActor()
 axial.GetMapper().SetInputConnection(axial_colors.GetOutputPort())
-axial.SetDisplayExtent(0, 510, 0, 510, 255, 255)
+axial.SetDisplayExtent(0, 510, 0, 510, 200, 200)
 axial.ForceOpaqueOn()
 
 # coronal
