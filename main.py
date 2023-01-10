@@ -99,21 +99,20 @@ def make_slider_widget(properties, colors, lut, idx):
 
     # Set the color properties
     # Change the color of the bar.
-    slider.GetTubeProperty().SetColor(colors.GetColor3d(properties.bar_color))
+    slider.GetSliderProperty().SetColor(colors.GetColor3d(properties.slider_color))
     # Change the color of the ends of the bar.
     slider.GetCapProperty().SetColor(colors.GetColor3d(properties.bar_ends_color))
     # Change the color of the knob that slides.
-    slider.GetSliderProperty().SetColor(colors.GetColor3d(properties.slider_color))
+    slider.GetTitleProperty().SetColor(colors.GetColor3d(properties.title_color))
     # Change the color of the knob when the mouse is held on it.
     slider.GetSelectedProperty().SetColor(colors.GetColor3d(properties.selected_color))
     # Change the color of the text displaying the value.
     slider.GetLabelProperty().SetColor(colors.GetColor3d(properties.value_color))
     # Change the color of the text indicating what the slider controls
     if idx in range(0, 16):
-        slider.GetTitleProperty().SetColor(lut.GetTableValue(idx)[:3])
-        slider.GetTitleProperty().ShadowOff()
+        slider.GetTubeProperty().SetColor(lut.GetTableValue(idx)[:3])
     else:
-        slider.GetTitleProperty().SetColor(colors.GetColor3d(properties.title_color))
+        slider.GetTubeProperty().SetColor(colors.GetColor3d(properties.title_color))
 
     slider_widget = vtk.vtkSliderWidget()
     slider_widget.SetRepresentation(slider)
@@ -137,9 +136,9 @@ class SliderProperties:
 
     title = None
 
-    title_color = 'MistyRose'
+    title_color = 'Gray'
     value_color = 'Gray'
-    slider_color = 'Gray'
+    slider_color = 'Black'
     selected_color = 'Gray'
     bar_color = 'Black'
     bar_ends_color = 'Black'
