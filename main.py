@@ -60,21 +60,21 @@ def create_ear_lut(colors):
     lut.Build()
 
     lut.SetTableValue(0, colors.GetColor4d('Black'))
-    lut.SetTableValue(1, colors.GetColor4d('salmon'))  # Temporal_Bone
-    lut.SetTableValue(2, colors.GetColor4d('beige'))  # Tympanic_Membrane
-    lut.SetTableValue(3, colors.GetColor4d('orange'))  # Facial_Nerve
-    lut.SetTableValue(4, colors.GetColor4d('misty_rose'))  # Cochlear_Nerve
-    lut.SetTableValue(5, colors.GetColor4d('white'))  # Labyrinth
-    lut.SetTableValue(6, colors.GetColor4d('tomato'))  # Fenestra_Rotunda
+    lut.SetTableValue(1, colors.GetColor4d('black'))  # Temporal_Bone
+    lut.SetTableValue(2, colors.GetColor4d('salmon'))  # Tympanic_Membrane
+    lut.SetTableValue(3, colors.GetColor4d('van_dyke_brown'))  # Facial_Nerve
+    lut.SetTableValue(4, colors.GetColor4d('olive_drab'))  # Cochlear_Nerve
+    lut.SetTableValue(5, colors.GetColor4d('indigo'))  # Labyrinth
+    lut.SetTableValue(6, colors.GetColor4d('cobalt'))  # Fenestra_Rotunda
     lut.SetTableValue(7, colors.GetColor4d('raspberry'))  # Incus_Bone
     lut.SetTableValue(8, colors.GetColor4d('banana'))  # Stapes_Bone
-    lut.SetTableValue(9, colors.GetColor4d('peru'))  # Tensor_Tympani_Muscle
-    lut.SetTableValue(10, colors.GetColor4d('pink'))  # Internal_Jugular_Vein
-    lut.SetTableValue(11, colors.GetColor4d('powder_blue'))  # Osseous_Spiral_Lamina
+    lut.SetTableValue(9, colors.GetColor4d('greenish_umber'))  # Tensor_Tympani_Muscle
+    lut.SetTableValue(10, colors.GetColor4d('peacock'))  # Internal_Jugular_Vein
+    lut.SetTableValue(11, colors.GetColor4d('aquamarine_medium'))  # Osseous_Spiral_Lamina
     lut.SetTableValue(12, colors.GetColor4d('carrot'))  # Internal_Carotd_Artery
-    lut.SetTableValue(13, colors.GetColor4d('wheat'))  # Vestibular_Nerve
+    lut.SetTableValue(13, colors.GetColor4d('cobalt_green'))  # Vestibular_Nerve
     lut.SetTableValue(14, colors.GetColor4d('violet'))  # Stapedius_Muscle
-    lut.SetTableValue(15, colors.GetColor4d('plum'))  # Malleus_Bone
+    lut.SetTableValue(15, colors.GetColor4d('warm_grey'))  # Malleus_Bone
 
     return lut
 
@@ -93,6 +93,7 @@ def make_slider_widget(properties, colors, lut, idx):
 
     slider.SetTubeWidth(properties.tube_width)
     slider.SetSliderLength(properties.slider_length)
+    slider.SetSliderWidth(properties.slider_width)
     slider.SetTitleHeight(properties.title_height)
     slider.SetLabelHeight(properties.label_height)
 
@@ -119,9 +120,11 @@ def make_slider_widget(properties, colors, lut, idx):
 
     return slider_widget
 
+# how the slider will be displayed
 class SliderProperties:
     tube_width = 0.008
-    slider_length = 0.008
+    slider_length = 0.05
+    slider_width = 0.015
     title_height = 0.02
     label_height = 0.01
 
@@ -141,6 +144,7 @@ class SliderProperties:
     bar_color = 'Black'
     bar_ends_color = 'Black'
 
+# callback determining what slider will do on value change
 class SliderCB:
     def __init__(self, actor_property):
         self.actorProperty = actor_property
@@ -207,7 +211,6 @@ for element, element_index in elements.items():
     a = create_smooth_ear_actor(segment_reader, element_index)
     a.GetProperty().SetDiffuseColor(lut.GetTableValue(i)[:3]) # :3
     actor_list.append(a)
-    i = i + 1
     
     # creating slider
     slider_properties = SliderProperties()
@@ -222,10 +225,12 @@ for element, element_index in elements.items():
     slider_widget = make_slider_widget(slider_properties, colors, lut, i)
     slider_widget.SetCurrentRenderer(ren2)
     slider_widget.SetInteractor(render_window_interactor)
-    slider_widget.SetAnimationModeToAnimate()
+    slider_widget.SetAnimationModeToJump()
     slider_widget.EnabledOn()
     slider_widget.AddObserver(vtk.vtkCommand.InteractionEvent, cb)
     sliders[element] = slider_widget
+    
+    i = i + 1
 
 # outlines
 outlineData = vtk.vtkOutlineFilter()
@@ -291,11 +296,9 @@ ren1.AddActor(sagittal)
 ren1.AddActor(axial)
 ren1.AddActor(coronal)
 
-iren = vtk.vtkRenderWindowInteractor()
-iren.SetRenderWindow(renWin)
 
 style = vtk.vtkInteractorStyleTrackballCamera()
-iren.SetInteractorStyle(style)
+render_window_interactor.SetInteractorStyle(style)
 
-iren.Initialize()
-iren.Start()
+
+render_window_interactor.Start()
