@@ -1,6 +1,8 @@
 # IEA
 Inner ear atlas created for Medical Data Visalisation course
 
+<img src="https://github.com/user17359/IEA/blob/main/IEA.png" width="50%" >
+
 Created using data from: 
 https://www.openanatomy.org/atlas-pages/atlas-spl-inner-ear.html
 
